@@ -11,23 +11,23 @@ Une interface utilisateur pour gérer des serveurs Wiremock avec persistance des
 
 ## Captures d'écran
 
-### Liste des mappings
-![Liste des mappings](screenshots/La liste des mappings.png)
+### Page d'accueil
+![Page d'accueil](screenshots/La%20page%20d'accueil.jpg)
 
 ### Liste des serveurs
-![Liste des serveurs](screenshots/La liste des serveurs.jpg)
+![Liste des serveurs](screenshots/La%20liste%20des%20serveurs.jpg)
 
-### Page d'accueil
-![Page d'accueil](screenshots/La page d'accueil.jpg)
-
-### Ajout d'un mapping
-![Ajout d'un mapping](screenshots/L'ajout d'un mapping.jpg)
+### Liste des mappings
+![Liste des mappings](screenshots/La%20liste%20des%20mappings.png)
 
 ### Ajout d'un serveur
-![Ajout d'un serveur](screenshots/L'ajout d'un serveur.jpg)
+![Ajout d'un serveur](screenshots/L'ajout%20d'un%20serveur.jpg)
 
-### Les différents thème
-![Les différents thème](screenshots/Les différents thème.jpg)
+### Ajout d'un mapping
+![Ajout d'un mapping](screenshots/L'ajout%20d'un%20mapping.jpg)
 
 ### Modification d'un mapping
-![Modification d'un mapping](screenshots/modification d'un mapping.jpg)
+![Modification d'un mapping](screenshots/modification%20d'un%20mapping.jpg)
+
+### Différents thèmes
+![Différents thèmes](screenshots/Les%20différents%20thème.jpg)
