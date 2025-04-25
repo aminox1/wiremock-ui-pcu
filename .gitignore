@@ -17,8 +17,25 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# Données persistantes
-/backend/data/mappings
+# Données persistantes spécifiques à l'utilisateur
+# Ne pas ignorer les dossiers de structure, seulement les fichiers spécifiques
+/backend/data/mappings/*
+!/backend/data/mappings/.gitkeep
+!/backend/data/mappings/LIZARD/
+!/backend/data/mappings/OCM/
+!/backend/data/mappings/TCRM/
+!/backend/data/mappings/TMFAPI/
+/backend/data/mappings/LIZARD/*
+/backend/data/mappings/OCM/*
+/backend/data/mappings/TCRM/*
+/backend/data/mappings/TMFAPI/*
+!/backend/data/mappings/LIZARD/.gitkeep
+!/backend/data/mappings/OCM/.gitkeep
+!/backend/data/mappings/TCRM/.gitkeep
+!/backend/data/mappings/TMFAPI/.gitkeep
+
+# Exemple de fichier servers.json
+!/backend/data/servers.json.example
 /backend/data/servers.json
 
 # Système d'exploitation
