@@ -1,35 +1,40 @@
 import React from 'react';
+import './ServerList.css';
 
 const ServerList = ({ servers, selectedServer, onSelectServer, onDeleteServer }) => {
+  // Ajouter un log pour déboguer
+  console.log("Serveurs dans ServerList:", servers);
+  
   return (
     <div className="server-list">
-      {servers.length === 0 ? (
-        <p className="no-servers">Aucun serveur configuré</p>
-      ) : (
-        <ul>
+      {servers && servers.length > 0 ? (
+        <div>
           {servers.map(server => (
-            <li 
-              key={server.id}
-              className={selectedServer && selectedServer.id === server.id ? 'selected' : ''}
+            <div 
+              key={server.id} 
+              className={`server-item ${selectedServer && selectedServer.id === server.id ? 'selected' : ''}`}
+              onClick={() => onSelectServer(server)}
             >
-              <div className="server-item" onClick={() => onSelectServer(server)}>
-                <span className="server-name">{server.name}</span>
-                <span className="server-url">{server.url}</span>
+              <div className="server-info">
+                <div className="server-name">{server.name}</div>
+                <div className="server-url">http://{server.host}:{server.port}</div>
               </div>
               <button 
-                className="btn-delete"
+                className="delete-button"
                 onClick={(e) => {
                   e.stopPropagation();
-                  if (window.confirm(`Êtes-vous sûr de vouloir supprimer le serveur ${server.name} ?`)) {
-                    onDeleteServer(server.id);
-                  }
+                  onDeleteServer(server.id);
                 }}
               >
-                🗑️
+                &#128465;
               </button>
-            </li>
+            </div>
           ))}
-        </ul>
+        </div>
+      ) : (
+        <div className="no-servers">
+          <p>Aucun serveur configuré</p>
+        </div>
       )}
     </div>
   );

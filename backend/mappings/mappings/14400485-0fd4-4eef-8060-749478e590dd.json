@@ -1,0 +1,17 @@
+{
+  "id": "14400485-0fd4-4eef-8060-749478e590dd",
+  "name": "amine",
+  "request": {
+    "method": "GET",
+    "url": "/api/a"
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "body": {
+      "a": "a"
+    }
+  }
+}

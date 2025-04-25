@@ -1,95 +1,230 @@
 // src/services/serverService.js
 import axios from 'axios';
-import { API_BASE_URL } from '../config';
+import { API_BASE_URL, DEFAULT_SERVER } from '../config';
+
+// Fonction pour récupérer tous les serveurs
 
 export const fetchServers = async () => {
   try {
-    console.log(`Tentative de récupération des serveurs depuis: ${API_BASE_URL}/servers`);
     const response = await axios.get(`${API_BASE_URL}/servers`);
-    console.log(`Serveurs récupérés avec succès, nombre: ${response.data.length}`);
+    console.log("Serveurs récupérés de l'API:", response.data);
     
-    // Sauvegarder dans le localStorage
-    localStorage.setItem('wiremock-servers', JSON.stringify(response.data));
+    // S'assurer que les données sont bien formatées
+    const formattedData = response.data.map(server => ({
+      ...server,
+      host: server.host || 'localhost',
+      port: parseInt(server.port) || 9090
+    }));
     
-    return response.data;
+    // Sauvegarder les serveurs dans le localStorage pour une utilisation hors ligne
+    localStorage.setItem('wiremock-servers', JSON.stringify(formattedData));
+    
+    return formattedData;
   } catch (error) {
     console.error('Erreur lors de la récupération des serveurs:', error);
     
-    // Essayer de récupérer depuis le localStorage en cas d'erreur
-    const savedServers = localStorage.getItem('wiremock-servers');
-    if (savedServers) {
-      console.log('Utilisation des serveurs sauvegardés dans le localStorage');
-      return JSON.parse(savedServers);
+    // Fallback : récupérer depuis le localStorage ou générer un serveur par défaut
+    try {
+      const savedServers = localStorage.getItem('wiremock-servers');
+      if (savedServers) {
+        const parsedServers = JSON.parse(savedServers);
+        console.log("Serveurs récupérés du localStorage:", parsedServers);
+        return parsedServers;
+      }
+    } catch (localStorageError) {
+      console.error('Erreur lors de la récupération des serveurs du localStorage:', localStorageError);
     }
     
-    // Si rien n'est disponible dans le localStorage, retourner un tableau vide
-    console.log('Aucun serveur disponible. Retour d\'un tableau vide.');
-    return [];
+    // Serveur par défaut si le backend n'est pas disponible
+    const defaultServers = [
+      {
+        id: 'default',
+        ...DEFAULT_SERVER
+      }
+    ];
+    
+    console.log("Utilisation des serveurs par défaut:", defaultServers);
+    localStorage.setItem('wiremock-servers', JSON.stringify(defaultServers));
+    return defaultServers;
   }
 };
 
-export const addServer = async (serverData) => {
+// Fonction pour créer un nouveau serveur
+export const createServer = async (server) => {
   try {
-    console.log(`Tentative d'ajout d'un serveur: ${serverData.name} - ${serverData.url}`);
-    const response = await axios.post(`${API_BASE_URL}/servers`, serverData);
-    console.log(`Serveur ajouté avec succès, ID: ${response.data.id}`);
+    // Vérifier que le serveur contient les propriétés nécessaires
+    if (!server.name || !server.host || !server.port) {
+      throw new Error('Le nom, l\'hôte et le port sont requis');
+    }
     
-    // Sauvegarder également dans le localStorage pour la persistance locale
-    const savedServers = localStorage.getItem('wiremock-servers');
-    const servers = savedServers ? JSON.parse(savedServers) : [];
-    servers.push(response.data);
-    localStorage.setItem('wiremock-servers', JSON.stringify(servers));
+    // Validation supplémentaire de l'hôte
+    const validHostPattern = /^(localhost|127\.0\.0\.1|\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}|[a-zA-Z0-9][-a-zA-Z0-9]{0,62}(\.[a-zA-Z0-9][-a-zA-Z0-9]{0,62})+)$/;
+    if (!validHostPattern.test(server.host)) {
+      throw new Error('L\'hôte est invalide. Utilisez un nom d\'hôte ou une adresse IP valide.');
+    }
+    
+    // Vérifier et convertir le port en nombre si nécessaire
+    const serverData = {
+      ...server,
+      port: parseInt(server.port, 10),
+      allowDuplicate: true // Permettre les doublons
+    };
+    
+    console.log("Création du serveur avec les données:", serverData);
+    
+    const response = await axios.post(`${API_BASE_URL}/servers`, serverData);
+    console.log("Serveur créé:", response.data);
+    
+    // Mise à jour du localStorage
+    try {
+      const savedServers = localStorage.getItem('wiremock-servers');
+      if (savedServers) {
+        const parsedServers = JSON.parse(savedServers);
+        parsedServers.push(response.data);
+        localStorage.setItem('wiremock-servers', JSON.stringify(parsedServers));
+      }
+    } catch (localStorageError) {
+      console.error('Erreur lors de la mise à jour des serveurs dans le localStorage:', localStorageError);
+    }
     
     return response.data;
   } catch (error) {
-    console.error('Erreur lors de l\'ajout du serveur:', error);
+    console.error('Erreur lors de la création du serveur:', error);
     
-    // Fallback : ajouter directement au localStorage
-    console.log('Utilisation du localStorage comme fallback pour l\'ajout du serveur');
-    const newServer = {
-      id: Date.now().toString(), // ID temporaire
-      name: serverData.name,
-      url: serverData.url,
-      createdAt: new Date().toISOString()
-    };
-    
-    const savedServers = localStorage.getItem('wiremock-servers');
-    const servers = savedServers ? JSON.parse(savedServers) : [];
-    servers.push(newServer);
-    localStorage.setItem('wiremock-servers', JSON.stringify(servers));
-    
-    console.log(`Serveur ajouté au localStorage, ID temporaire: ${newServer.id}`);
-    return newServer;
+    // Amélioration de la gestion des erreurs
+    if (error.response) {
+      // Le serveur a répondu avec un code d'erreur
+      const errorMessage = error.response.data.error || 'Erreur lors de la création du serveur';
+      console.error('Détails de l\'erreur serveur:', error.response.status, error.response.data);
+      throw new Error(errorMessage);
+    } else if (error.request) {
+      // La requête a été envoyée mais pas de réponse
+      throw new Error('Le backend est inaccessible. Vérifiez qu\'il est bien démarré.');
+    } else {
+      // Autre type d'erreur
+      throw error;
+    }
   }
 };
 
-export const deleteServer = async (serverId) => {
+// Fonction pour mettre à jour un serveur existant
+export const updateServer = async (serverId, server) => {
   try {
-    console.log(`Tentative de suppression du serveur: ${serverId}`);
-    await axios.delete(`${API_BASE_URL}/servers/${serverId}`);
-    console.log(`Serveur supprimé avec succès: ${serverId}`);
-    
-    // Mettre à jour également le localStorage
-    const savedServers = localStorage.getItem('wiremock-servers');
-    if (savedServers) {
-      const servers = JSON.parse(savedServers);
-      const updatedServers = servers.filter(server => server.id !== serverId);
-      localStorage.setItem('wiremock-servers', JSON.stringify(updatedServers));
+    // Vérifier que le serveur contient les propriétés nécessaires
+    if (!server.name || !server.host || !server.port) {
+      throw new Error('Le nom, l\'hôte et le port sont requis');
     }
     
-    return true;
+    // Validation supplémentaire de l'hôte
+    const validHostPattern = /^(localhost|127\.0\.0\.1|\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}|[a-zA-Z0-9][-a-zA-Z0-9]{0,62}(\.[a-zA-Z0-9][-a-zA-Z0-9]{0,62})+)$/;
+    if (!validHostPattern.test(server.host)) {
+      throw new Error('L\'hôte est invalide. Utilisez un nom d\'hôte ou une adresse IP valide.');
+    }
+    
+    // Vérifier et convertir le port en nombre si nécessaire
+    const serverData = {
+      ...server,
+      port: parseInt(server.port, 10),
+      allowDuplicate: true // Permettre les doublons
+    };
+    
+    const response = await axios.put(`${API_BASE_URL}/servers/${serverId}`, serverData);
+    console.log("Serveur mis à jour:", response.data);
+    
+    // Mise à jour du localStorage
+    try {
+      const savedServers = localStorage.getItem('wiremock-servers');
+      if (savedServers) {
+        let parsedServers = JSON.parse(savedServers);
+        parsedServers = parsedServers.map(s => s.id === serverId ? response.data : s);
+        localStorage.setItem('wiremock-servers', JSON.stringify(parsedServers));
+      }
+    } catch (localStorageError) {
+      console.error('Erreur lors de la mise à jour des serveurs dans le localStorage:', localStorageError);
+    }
+    
+    return response.data;
+  } catch (error) {
+    console.error('Erreur lors de la mise à jour du serveur:', error);
+    
+    // Amélioration de la gestion des erreurs
+    if (error.response) {
+      const errorMessage = error.response.data.error || 'Erreur lors de la mise à jour du serveur';
+      throw new Error(errorMessage);
+    } else if (error.request) {
+      throw new Error('Le backend est inaccessible.');
+    } else {
+      throw error;
+    }
+  }
+};
+
+// Fonction pour supprimer un serveur
+export const deleteServer = async (serverId) => {
+  try {
+    const response = await axios.delete(`${API_BASE_URL}/servers/${serverId}`);
+    console.log("Serveur supprimé:", response.data);
+    
+    // Mise à jour du localStorage
+    try {
+      const savedServers = localStorage.getItem('wiremock-servers');
+      if (savedServers) {
+        let parsedServers = JSON.parse(savedServers);
+        parsedServers = parsedServers.filter(s => s.id !== serverId);
+        localStorage.setItem('wiremock-servers', JSON.stringify(parsedServers));
+      }
+    } catch (localStorageError) {
+      console.error('Erreur lors de la mise à jour des serveurs dans le localStorage:', localStorageError);
+    }
+    
+    return response.data;
   } catch (error) {
     console.error('Erreur lors de la suppression du serveur:', error);
     
-    // Fallback : supprimer directement du localStorage
-    console.log('Utilisation du localStorage comme fallback pour la suppression du serveur');
-    const savedServers = localStorage.getItem('wiremock-servers');
-    if (savedServers) {
-      const servers = JSON.parse(savedServers);
-      const updatedServers = servers.filter(server => server.id !== serverId);
-      localStorage.setItem('wiremock-servers', JSON.stringify(updatedServers));
+    // Amélioration de la gestion des erreurs
+    if (error.response) {
+      const errorMessage = error.response.data.error || 'Erreur lors de la suppression du serveur';
+      throw new Error(errorMessage);
+    } else if (error.request) {
+      throw new Error('Le backend est inaccessible.');
+    } else {
+      throw error;
+    }
+  }
+};
+
+// Fonction pour vérifier la disponibilité d'un serveur Wiremock
+export const checkServerConnection = async (host, port) => {
+  try {
+    // Validation de l'hôte
+    const validHostPattern = /^(localhost|127\.0\.0\.1|\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}|[a-zA-Z0-9][-a-zA-Z0-9]{0,62}(\.[a-zA-Z0-9][-a-zA-Z0-9]{0,62})+)$/;
+    if (!validHostPattern.test(host)) {
+      return { 
+        status: 'error', 
+        message: 'L\'hôte est invalide. Utilisez un nom d\'hôte ou une adresse IP valide.',
+      };
     }
     
-    return true;
+    const response = await axios.post(`${API_BASE_URL}/servers/check-connection`, { host, port });
+    return response.data;
+  } catch (error) {
+    console.error('Erreur de vérification de la connexion au serveur Wiremock:', error);
+    
+    if (error.response) {
+      return { 
+        status: 'error', 
+        message: error.response.data.error || 'Erreur lors de la vérification de la connexion',
+      };
+    } else if (error.request) {
+      return { 
+        status: 'error', 
+        message: 'Le backend est inaccessible',
+      };
+    } else {
+      return { 
+        status: 'error', 
+        message: `Erreur: ${error.message}`,
+      };
+    }
   }
 };

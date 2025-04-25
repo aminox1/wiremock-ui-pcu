@@ -1,0 +1,17 @@
+{
+  "id": "02b03656-e9f9-40ce-b4f6-e70b61d73ab0",
+  "name": "aal",
+  "request": {
+    "method": "GET",
+    "url": "/api/aal"
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "body": {
+      "Hello": "world!"
+    }
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "id": "302d3c64-847a-4d74-be36-9f66c5356505",
+  "name": "Test JSON",
+  "request": {
+    "method": "GET",
+    "url": "/api/json-test"
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "body": {
+      "message": "Hello, world!",
+      "count": 123,
+      "items": [
+        "a",
+        "b",
+        "c"
+      ]
+    }
+  }
+}

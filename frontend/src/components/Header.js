@@ -1,4 +1,3 @@
-// src/components/Header.js
 import React, { useState, useEffect } from 'react';
 import Settings from './Settings';
 
@@ -42,7 +41,7 @@ const Header = () => {
           ⚙️ Paramètres
         </button>
         <a 
-          href="https://github.com/wiremock/wiremock" 
+          href="https://github.com/aminox1/wiremock-ui-pcu" 
           target="_blank" 
           rel="noopener noreferrer"
           className="btn-github"
